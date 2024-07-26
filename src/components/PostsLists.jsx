@@ -1,17 +1,12 @@
-const PostItem = (props) => {
+import PostItem from './PostItems';
+
+const PostList = ({posts, title}) => {
     return (
-        <div className='post'>
-            <div className='post__content'>
-                <strong>{props.post.id}. {props.post.title}</strong>
-                <div>
-                    {props.post.body}
-                </div>
-            </div>
-            <div className='post__btns'>
-                <button>Удалить</button>
-            </div>
+        <div>
+            <h1 style={{ textAlign: "center" }}>{title}</h1>
+            {posts.map((post, index) => <PostItem number={index + 1} post={post} key={post.id} />)}
         </div>
     )
 };
 
-export default PostItem
+export default PostList
