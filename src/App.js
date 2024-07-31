@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import './styles/App.css';
 import PostList from "./components/PostsList.jsx";
 import MyButton from "./components/UI/button/MyButton.jsx";
-import MyInput from "./components/UI/input/MyInput.jsx";
 import PostForm from "./components/PostForm.jsx";
-import { MySelect } from "./components/UI/select/MySelect.jsx";
 import PostFilter from "./components/PostFilter.jsx";
 import MyModal from "./components/UI/modals/MyModal.jsx";
+import Loader from "./components/UI/Loader/Loader.jsx";
+import { usePosts } from "./hooks/usePosts.js";
+import PostService from "./API/PostService.js";
+import { useFetching } from "./hooks/useFetching.js";
 
 function App() {
   const [posts, setPosts] = useState([
@@ -16,18 +18,16 @@ function App() {
   ])
   const [filter, setFilter] = useState({ sort: '', search: '' });
   const [modal, setModal] = useState(false);
+  const [fetchPosts, isPoastLoading, postError] = useFetching(async () => {
+    const posts = await PostService.getAll();
+    setPosts(posts);
+  })
 
-  const sortedPosts = useMemo(() => {
-    if (filter.sort) {
-      return [...posts].sort((a, b) => a[filter.sort].localeCompare(b[filter.sort]));
-    }
+  const sortAndSearchedPosts = usePosts(posts, filter.sort, filter.search);
 
-    return posts;
-  }, [filter.sort, posts]);
-
-  const sortAndSearchedPosts = useMemo(() => {
-    return sortedPosts.filter(post => post.title.toLowerCase().includes(filter.search.toLowerCase()));
-  }, [filter.search, sortedPosts]);
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const createNewPost = (newPost) => {
     setPosts([...posts, newPost]);
@@ -38,7 +38,6 @@ function App() {
     setPosts(posts.filter(p => p.id != post.id));
   }
 
-
   return (
     <div className="App">
       <MyButton style={{ marginTop: 30 }} onClick={() => { setModal(true) }}>Создать пользователя</MyButton>
@@ -47,7 +46,14 @@ function App() {
       </MyModal>
       <hr style={{ margin: '15px 0' }} />
       <PostFilter filter={filter} setFilter={setFilter} />
-      <PostList remove={deletePost} posts={sortAndSearchedPosts} title="Список постов" />
+      {postError &&
+        <h1>Ошибка</h1>
+      }
+      {isPoastLoading
+        ? <div style={{ display: 'flex', justifyContent: 'center', marginTop: 50 }}><Loader /></div>
+        :
+        <PostList remove={deletePost} posts={sortAndSearchedPosts} title="Список постов" />
+      }
     </div>
   );
 }
